@@ -16,7 +16,12 @@ import type {
   PeerId,
   TransportEvent,
 } from '../transport/types';
-import type { ChatEntry, SessionRole, SessionState } from './SessionState';
+import type {
+  ChatEntry,
+  SessionEvent,
+  SessionRole,
+  SessionState,
+} from './SessionState';
 
 const log = createLogger('Session');
 
@@ -24,6 +29,7 @@ const log = createLogger('Session');
 export abstract class SessionCore {
   protected state: SessionState;
   private readonly changes = new Emitter<SessionState>();
+  private readonly events = new Emitter<SessionEvent>();
   protected readonly now: () => number;
   private unsubscribeTransport: Unsubscribe | null;
 
@@ -51,6 +57,10 @@ export abstract class SessionCore {
     return this.changes.subscribe(listener);
   }
 
+  subscribeEvents(listener: (event: SessionEvent) => void): Unsubscribe {
+    return this.events.subscribe(listener);
+  }
+
   /** Humans at the table, including this device. */
   humanCount(): number {
     return 1 + this.state.peers.filter(p => p.kind === PlayerKind.Human).length;
@@ -76,6 +86,10 @@ export abstract class SessionCore {
   protected stopListening(): void {
     this.unsubscribeTransport?.();
     this.unsubscribeTransport = null;
+  }
+
+  protected emitEvent(event: SessionEvent): void {
+    this.events.emit(event);
   }
 
   protected handleRawMessage(peerId: PeerId, raw: string): void {

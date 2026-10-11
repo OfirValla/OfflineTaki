@@ -1,6 +1,6 @@
 {
   "name": "offline-taki",
-  "version": "0.3.1",
+  "version": "0.3.3",
   "private": true,
   "description": "Offline, nearby-multiplayer TAKI-style card game. No internet, no server.",
   "scripts": {
@@ -21,6 +21,7 @@
     "react-native-get-random-values": "^2.0.0",
     "react-native-safe-area-context": "^5.10.0",
     "react-native-screens": "^4.28.0",
+    "react-native-sound": "^0.13.0",
     "react-native-svg": "^15.15.5",
     "uuid": "^14.0.2",
     "zod": "^4.6.5"

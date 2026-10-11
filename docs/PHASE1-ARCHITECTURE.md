@@ -867,6 +867,7 @@ Dependencies (kept small):
 | `@react-native-async-storage/async-storage` | Persistence |
 | `react-native-get-random-values` | Cryptographically random ids and tokens (uuid is generated in `utils/ids.ts`) |
 | `react-native-svg` | Vector table background, card symbols and direction arrows; no image assets |
+| `react-native-sound` | Plays the synthesised WAV effects bundled in `res/raw` |
 | `com.google.android.gms:play-services-nearby` (Gradle) | Nearby Connections |
 | `jest`, `@testing-library/react-native`, `typescript`, `eslint` | Tooling |
 

@@ -277,6 +277,13 @@ export class GameClient extends SessionCore implements ClientSession {
         return;
 
       case MessageType.LobbyState: {
+        const known = new Set(this.state.peers.map(p => p.playerId));
+        const newcomers = message.p.peers.filter(
+          p =>
+            !known.has(p.playerId) &&
+            p.playerId !== this.state.self.playerId &&
+            p.kind === PlayerKind.Human,
+        );
         const justStarted =
           this.state.phase === LobbyPhase.Lobby &&
           message.p.phase === LobbyPhase.Started;
@@ -285,7 +292,10 @@ export class GameClient extends SessionCore implements ClientSession {
           seatCount: message.p.seatCount,
           peers: this.othersFrom(message.p.peers),
         });
+        for (const p of newcomers)
+          this.emitEvent({ type: 'peerJoined', name: p.name });
         if (justStarted) {
+          this.emitEvent({ type: 'gameStarted' });
           const bots = message.p.peers.filter(
             p => p.kind === PlayerKind.Bot,
           ).length;
@@ -335,10 +345,12 @@ export class GameClient extends SessionCore implements ClientSession {
           game: applyClientEvent(game, event, version),
           pendingActionId: null,
         });
+        this.emitEvent({ type: 'game', event });
         return;
       }
 
       case MessageType.ActionRejected:
+        this.emitEvent({ type: 'actionRejected', code: message.p.code });
         this.update({
           pendingActionId: null,
           lastRejection: {

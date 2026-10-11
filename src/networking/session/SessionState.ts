@@ -1,4 +1,9 @@
-import type { GameAction, LegalMoves, PlayerView } from '../../game';
+import type {
+  ClientEvent,
+  GameAction,
+  LegalMoves,
+  PlayerView,
+} from '../../game';
 import type { Unsubscribe } from '../../utils/Emitter';
 import type { LobbyPhase, PeerInfo } from '../protocol';
 import type { DiscoveredGame, PeerId } from '../transport/types';
@@ -63,10 +68,21 @@ export interface SessionState {
   reconnectToken: string | null;
 }
 
+/**
+ * Things that happen, as opposed to how things are. Sounds and animations hang off these;
+ * state snapshots (which carry no history) never produce them.
+ */
+export type SessionEvent =
+  | { type: 'game'; event: ClientEvent }
+  | { type: 'peerJoined'; name: string }
+  | { type: 'gameStarted' }
+  | { type: 'actionRejected'; code: string };
+
 export interface GameSession {
   readonly role: SessionRole;
   getState(): SessionState;
   subscribe(listener: (state: SessionState) => void): Unsubscribe;
+  subscribeEvents(listener: (event: SessionEvent) => void): Unsubscribe;
   sendChat(text: string): Promise<void>;
   leave(): Promise<void>;
   /** Submits a game action for this player. Outcome arrives through state (`game` / `lastRejection`). */

@@ -180,6 +180,7 @@ export class GameHost extends SessionCore implements HostSession {
         .stopAdvertising()
         .catch(e => log.warn('stopAdvertising', e));
       this.addSystemMessage(describeStart(bots.length));
+      this.emitEvent({ type: 'gameStarted' });
       await this.broadcastLobbyState();
     } else if (this.engine && this.engine.phase.kind === 'Finished') {
       this.addSystemMessage('New round');
@@ -218,6 +219,8 @@ export class GameHost extends SessionCore implements HostSession {
     const actionId = uuid();
     this.update({ pendingActionId: actionId });
     const result = this.applyAction(this.state.self.playerId, actionId, action);
+    if (!result.ok)
+      this.emitEvent({ type: 'actionRejected', code: result.error.code });
     this.update({
       pendingActionId: null,
       lastRejection: result.ok
@@ -279,6 +282,12 @@ export class GameHost extends SessionCore implements HostSession {
     const base = this.eventLog.latestVersion;
     this.engine = { ...state, version: base + events.length };
     this.eventLog.reset(this.engine.version);
+    for (const event of events) {
+      this.emitEvent({
+        type: 'game',
+        event: redactEvent(event, this.state.self.playerId),
+      });
+    }
     this.recentActions.clear();
     this.update({
       game: projectForPlayer(this.engine, this.state.self.playerId),
@@ -307,6 +316,12 @@ export class GameHost extends SessionCore implements HostSession {
 
     this.engine = result.value.state;
     const versioned = this.eventLog.append(result.value.events);
+    for (const { event } of versioned) {
+      this.emitEvent({
+        type: 'game',
+        event: redactEvent(event, this.state.self.playerId),
+      });
+    }
     for (const peer of this.state.peers) {
       if (peer.kind !== PlayerKind.Human || !peer.peerId || !peer.connected)
         continue;
@@ -552,6 +567,7 @@ export class GameHost extends SessionCore implements HostSession {
     this.tokens.set(peer.playerId, token);
     this.update({ peers: [...this.state.peers, peer] });
     this.addSystemMessage(`${peer.name} joined`);
+    this.emitEvent({ type: 'peerJoined', name: peer.name });
 
     await this.sendTo(peerId, MessageType.HelloAck, {
       hostName: this.state.self.name,

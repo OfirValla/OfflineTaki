@@ -8,14 +8,21 @@ import { PrimaryButton } from '../../components/PrimaryButton';
 import { ReadinessBanner } from '../../components/ReadinessBanner';
 import { Screen } from '../../components/Screen';
 import { SeatStepper } from '../../components/SeatStepper';
+import { SoundToggle } from '../../components/SoundToggle';
 import { TextField } from '../../components/TextField';
 import { useNearbyReadiness } from '../../hooks/useNearbyReadiness';
 import { MAX_SEATS, MIN_SEATS } from '../../networking/protocol';
 import { MAX_PLAYER_NAME_LENGTH } from '../../storage/profileStore';
 
 export function HomeScreen({ navigation }: ScreenProps<'Home'>) {
-  const { profile, settings, setPlayerName, setSeatCount, hostGame } =
-    useSessionApi();
+  const {
+    profile,
+    settings,
+    setPlayerName,
+    setSeatCount,
+    setSoundEnabled,
+    hostGame,
+  } = useSessionApi();
   const readiness = useNearbyReadiness();
   const [creating, setCreating] = useState(false);
 
@@ -40,6 +47,12 @@ export function HomeScreen({ navigation }: ScreenProps<'Home'>) {
 
   return (
     <Screen avoidKeyboard>
+      <View style={styles.toolbar}>
+        <SoundToggle
+          enabled={settings.soundEnabled}
+          onToggle={next => void setSoundEnabled(next)}
+        />
+      </View>
       <View style={styles.hero}>
         <View style={styles.logo}>
           {[
@@ -108,7 +121,8 @@ export function HomeScreen({ navigation }: ScreenProps<'Home'>) {
 }
 
 const styles = StyleSheet.create({
-  hero: { alignItems: 'center', paddingTop: spacing.lg, gap: spacing.sm },
+  toolbar: { flexDirection: 'row', justifyContent: 'flex-end' },
+  hero: { alignItems: 'center', paddingTop: spacing.sm, gap: spacing.sm },
   logo: { flexDirection: 'row', gap: 2 },
   logoLetterBox: {
     width: 52,

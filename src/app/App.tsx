@@ -9,6 +9,7 @@ import { JoinGameScreen } from '../screens/Join/JoinGameScreen';
 import { SessionScreen } from '../screens/Session/SessionScreen';
 import type { RootStackParamList } from './navigation';
 import { SessionProvider } from './SessionContext';
+import { SoundController } from './SoundController';
 import { colors } from './theme';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -29,6 +30,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <SessionProvider>
+        <SoundController />
         <StatusBar barStyle="light-content" />
         <NavigationContainer theme={navigationTheme}>
           <Stack.Navigator

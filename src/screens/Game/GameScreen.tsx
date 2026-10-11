@@ -32,7 +32,7 @@ import {
 import { GameHost } from '../../networking/host/GameHost';
 
 export function GameScreen({ navigation }: ScreenProps<'Game'>) {
-  const { session, leave } = useSessionApi();
+  const { session, leave, settings, setSoundEnabled } = useSessionApi();
   const state = useSessionState(session);
   const view = state?.game ?? null;
   // Cheap to recompute; derived directly so it can never lag behind the view.
@@ -149,6 +149,10 @@ export function GameScreen({ navigation }: ScreenProps<'Game'>) {
       `${view.players.length} players · ${view.drawPileCount} cards in the pile`,
       [
         { text: 'Back to game', style: 'cancel' },
+        {
+          text: settings.soundEnabled ? 'Mute sounds' : 'Unmute sounds',
+          onPress: () => void setSoundEnabled(!settings.soundEnabled),
+        },
         ...(connectionLost
           ? [{ text: 'Reconnect', onPress: () => navigation.navigate('Join') }]
           : []),

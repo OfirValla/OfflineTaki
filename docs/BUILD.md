@@ -141,6 +141,49 @@ China; Huawei phones without it will show a clear message).
 
 Logs: `adb logcat -s ReactNativeJS NearbyConnections` while the phone is connected.
 
+## Sound effects
+
+The effects are synthesised, not recorded: `scripts/generate-sounds.js` writes small 16-bit WAV
+files into `android/app/src/main/res/raw/` (about 280 KB in total), so the app ships licence-free
+audio and never downloads anything. The generated files are committed; regenerate after editing
+the script with:
+
+```powershell
+node scripts/generate-sounds.js
+```
+
+Playback uses react-native-sound on the media stream (volume keys and silent mode apply). The
+speaker button on the Home screen and the game menu mute everything; the choice is remembered.
+
+| Sound | When |
+|---|---|
+| card snap | any card lands on the pile |
+| zap | Stop, Plus or Change Direction played |
+| swish | a card is drawn |
+| two-note chime | the turn passes to you |
+| rising arpeggio | a TAKI opens |
+| bling | a colour is chosen |
+| low buzz | the host refused your move |
+| fanfare / descending notes | you won / someone else won |
+| pop | a player joined the lobby |
+| burst of snaps | the deal |
+
+## App icon
+
+The launcher icon is generated, not drawn by hand, so it can be tweaked in code:
+
+- `scripts/generate-icon.js` writes the adaptive icon for Android 8 and newer (vector foreground,
+  background and a monochrome layer for themed icons) into `res/drawable` and `res/mipmap-anydpi-v26`.
+- `scripts/render-icon-pngs.ps1` renders the same design with GDI+ into the legacy PNG mipmaps
+  for Android 7, plus `dist/icon-512.png` as a store-sized preview.
+
+Both scripts share the same numbers; change the design in one and mirror it in the other, then run:
+
+```powershell
+node scripts/generate-icon.js
+pwsh scripts/render-icon-pngs.ps1
+```
+
 ## Developer checks
 
 ```powershell

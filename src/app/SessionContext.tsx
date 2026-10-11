@@ -45,6 +45,7 @@ interface SessionApi {
   session: ActiveSession | null;
   setPlayerName(name: string): Promise<void>;
   setSeatCount(seatCount: number): Promise<void>;
+  setSoundEnabled(enabled: boolean): Promise<void>;
   hostGame(): Promise<GameHost>;
   joinGame(game: DiscoveredGame): Promise<GameClient>;
   leave(): Promise<void>;
@@ -92,11 +93,23 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     await savePlayerName(normalized);
   }, []);
 
-  const setSeatCount = useCallback(async (seatCount: number) => {
-    const next = { seatCount: clampSeatCount(seatCount) };
-    setSettings(next);
-    await saveSettings(next);
-  }, []);
+  const setSeatCount = useCallback(
+    async (seatCount: number) => {
+      const next = { ...settings, seatCount: clampSeatCount(seatCount) };
+      setSettings(next);
+      await saveSettings(next);
+    },
+    [settings],
+  );
+
+  const setSoundEnabled = useCallback(
+    async (enabled: boolean) => {
+      const next = { ...settings, soundEnabled: enabled };
+      setSettings(next);
+      await saveSettings(next);
+    },
+    [settings],
+  );
 
   const leave = useCallback(async () => {
     const current = session;
@@ -171,6 +184,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       session,
       setPlayerName,
       setSeatCount,
+      setSoundEnabled,
       hostGame,
       joinGame,
       leave,
@@ -182,6 +196,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       session,
       setPlayerName,
       setSeatCount,
+      setSoundEnabled,
       hostGame,
       joinGame,
       leave,
