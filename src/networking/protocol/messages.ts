@@ -6,6 +6,7 @@ import {
 } from './gameSchemas';
 import { LobbyPhase, MAX_SEATS, MIN_SEATS, PlayerKind } from './lobby';
 import { MessageType, RejectReason } from './MessageType';
+import { REACTION_EMOJIS } from './reactions';
 
 /**
  * Wire schemas. Every inbound string is parsed with `MessageSchema`; anything that fails is
@@ -94,6 +95,15 @@ export const ChatMessageSchema = envelopeBase.extend({
   }),
 });
 
+/** A quick emoji reaction; relayed by the host like chat. */
+export const ReactionMessageSchema = envelopeBase.extend({
+  t: z.literal(MessageType.Reaction),
+  p: z.object({
+    emoji: z.enum(REACTION_EMOJIS),
+    senderName: z.string().min(1).max(NAME_MAX),
+  }),
+});
+
 export const PingMessageSchema = envelopeBase.extend({
   t: z.literal(MessageType.Ping),
   p: z.object({ nonce: z.string().min(1).max(32) }),
@@ -148,6 +158,7 @@ export const MessageSchema = z.discriminatedUnion('t', [
   RejectedMessageSchema,
   LobbyStateMessageSchema,
   ChatMessageSchema,
+  ReactionMessageSchema,
   PingMessageSchema,
   PongMessageSchema,
   GameActionMessageSchema,

@@ -123,10 +123,14 @@ China; Huawei phones without it will show a clear message).
    a Change Color asks for a colour; a TAKI lets you chain cards of that colour and shows
    **Close TAKI**; a Plus gives you another card to play; Stop skips the next player. The first
    phone with no cards wins and both phones show the same ranking. The host can tap **New round**.
-9. Reconnect: mid-game, turn Bluetooth off on Phone B for ten seconds, then on again. Phone A shows
+9. Reactions: tap the smiley at the top-right of the table and pick an emoji. It pops up over your
+   hand on your phone and over your seat on the other phones for about three seconds, with a
+   soft boop, and shows up in the lobby chat log. Tapping several in a row only sends one per
+   0.7 seconds.
+10. Reconnect: mid-game, turn Bluetooth off on Phone B for ten seconds, then on again. Phone A shows
    B as "reconnecting…" while the game goes on. On Phone B go back to **Join Nearby Game** and
    tap the game again: B is back at the table with the same cards.
-10. Phone B taps **Leave**; Phone A shows "B left". Phone A taps **Stop**; Phone B
+11. Phone B taps **Leave**; Phone A shows "B left". Phone A taps **Stop**; Phone B
     (if still connected) shows the connection-lost banner.
 
 ## Troubleshooting
@@ -166,6 +170,7 @@ speaker button on the Home screen and the game menu mute everything; the choice 
 | low buzz | the host refused your move |
 | fanfare / descending notes | you won / someone else won |
 | pop | a player joined the lobby |
+| two-tone boop | an emoji reaction arrived |
 | burst of snaps | the deal |
 
 ## App icon

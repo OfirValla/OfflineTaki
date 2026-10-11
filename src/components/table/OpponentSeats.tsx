@@ -3,8 +3,12 @@ import { Animated, StyleSheet, Text, View } from 'react-native';
 import { colors } from '../../app/theme';
 import type { PlayerView } from '../../game';
 import { PlayerKind } from '../../networking/protocol';
-import type { SessionPeer } from '../../networking/session/SessionState';
+import type {
+  Reaction,
+  SessionPeer,
+} from '../../networking/session/SessionState';
 import { CARD_SIZES, CardView } from '../cards/CardView';
+import { ReactionBubble } from '../reactions/ReactionBubble';
 
 interface OpponentSeatsProps {
   view: PlayerView;
@@ -12,6 +16,8 @@ interface OpponentSeatsProps {
   /** Size of the area the seats are laid out in. */
   width: number;
   height: number;
+  /** Latest live reaction per player id, if any. */
+  reactions?: Record<string, Reaction>;
 }
 
 const SEAT_W = 108;
@@ -27,6 +33,7 @@ export function OpponentSeats({
   peers,
   width,
   height,
+  reactions = {},
 }: OpponentSeatsProps) {
   const me = view.players.findIndex(p => p.id === view.you.playerId);
   const ordered = [...view.players.slice(me + 1), ...view.players.slice(0, me)];
@@ -55,6 +62,7 @@ export function OpponentSeats({
             active={active}
             offline={peer ? !peer.connected : false}
             bot={peer?.kind === PlayerKind.Bot}
+            reaction={reactions[player.id]}
             style={{ left: x, top: Math.max(0, y) }}
           />
         );
@@ -69,10 +77,19 @@ interface SeatProps {
   active: boolean;
   offline: boolean;
   bot: boolean;
+  reaction?: Reaction;
   style: { left: number; top: number };
 }
 
-function Seat({ name, cardCount, active, offline, bot, style }: SeatProps) {
+function Seat({
+  name,
+  cardCount,
+  active,
+  offline,
+  bot,
+  reaction,
+  style,
+}: SeatProps) {
   const scale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -111,6 +128,13 @@ function Seat({ name, cardCount, active, offline, bot, style }: SeatProps) {
         { transform: [{ scale }] },
       ]}
     >
+      {reaction ? (
+        <ReactionBubble
+          key={reaction.id}
+          reaction={reaction}
+          style={styles.bubble}
+        />
+      ) : null}
       <View style={styles.fan}>
         {Array.from({ length: fan }, (_, j) => (
           <View
@@ -154,6 +178,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   seatOffline: { opacity: 0.5 },
+  bubble: { position: 'absolute', top: -46, zIndex: 10 },
   fan: {
     width: SEAT_W,
     height: 54,

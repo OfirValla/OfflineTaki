@@ -9,6 +9,7 @@ import {
   DEFAULT_SEATS,
   type Message,
   type PeerInfo,
+  type ReactionEmoji,
 } from '../protocol';
 import { describeError, SessionCore } from '../session/SessionCore';
 import type {
@@ -76,6 +77,7 @@ export class GameClient extends SessionCore implements ClientSession {
       lastRejection: null,
       pendingActionId: null,
       reconnectToken: null,
+      reactions: [],
     };
     super(transport, initial, options.now ?? Date.now);
     this.appVersion = options.appVersion;
@@ -163,6 +165,16 @@ export class GameClient extends SessionCore implements ClientSession {
   // ---------------------------------------------------------------------------------------
   // Playing
   // ---------------------------------------------------------------------------------------
+
+  async sendReaction(emoji: ReactionEmoji): Promise<void> {
+    this.recordReaction(this.state.self.playerId, this.state.self.name, emoji);
+    if (this.hostPeerId && this.state.status === 'joined') {
+      await this.sendTo(this.hostPeerId, MessageType.Reaction, {
+        emoji,
+        senderName: this.state.self.name,
+      });
+    }
+  }
 
   async act(action: GameAction): Promise<void> {
     if (
@@ -362,6 +374,13 @@ export class GameClient extends SessionCore implements ClientSession {
         });
         return;
 
+      case MessageType.Reaction:
+        this.recordReaction(
+          message.from,
+          message.p.senderName,
+          message.p.emoji,
+        );
+        return;
       case MessageType.Pong:
         return;
       default:

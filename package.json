@@ -1,6 +1,6 @@
 {
   "name": "offline-taki",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "private": true,
   "description": "Offline, nearby-multiplayer TAKI-style card game. No internet, no server.",
   "scripts": {

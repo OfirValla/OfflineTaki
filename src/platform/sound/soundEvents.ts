@@ -15,6 +15,7 @@ export enum SoundName {
   Join = 'sfx_join',
   Start = 'sfx_start',
   Tap = 'sfx_tap',
+  Reaction = 'sfx_reaction',
 }
 
 export const ALL_SOUNDS: readonly SoundName[] = Object.values(SoundName);
@@ -41,6 +42,8 @@ export function soundsForEvent(
       return [SoundName.Reject];
     case 'gameStarted':
       return [];
+    case 'reaction':
+      return [SoundName.Reaction];
     case 'game':
       return soundsForGameEvent(event.event, context);
   }

@@ -17,6 +17,7 @@ import {
   MessageType,
   PROTOCOL_VERSION,
   PlayerKind,
+  REACTION_MIN_INTERVAL_MS,
   RejectReason,
   clampSeatCount,
   DEFAULT_SEATS,
@@ -24,6 +25,7 @@ import {
   type MessageOf,
   type PayloadOf,
   type PeerInfo,
+  type ReactionEmoji,
 } from '../protocol';
 import { delay, SessionCore } from '../session/SessionCore';
 import type {
@@ -94,6 +96,8 @@ export class GameHost extends SessionCore implements HostSession {
     Map<string, Result<void, ActionFailure>>
   >();
   private closed = false;
+  /** Last accepted reaction per player, for rate limiting. */
+  private readonly lastReactionAt = new Map<string, number>();
   /** Test hook: how many bot actions the engine refused (should stay 0). */
   botFailures = 0;
 
@@ -121,6 +125,7 @@ export class GameHost extends SessionCore implements HostSession {
       lastRejection: null,
       pendingActionId: null,
       reconnectToken: null,
+      reactions: [],
     };
     super(transport, initial, now);
     this.appVersion = options.appVersion;
@@ -210,6 +215,16 @@ export class GameHost extends SessionCore implements HostSession {
     await this.relay(
       MessageType.Chat,
       { text: trimmed, senderName: this.state.self.name },
+      this.state.self.playerId,
+      null,
+    );
+  }
+
+  async sendReaction(emoji: ReactionEmoji): Promise<void> {
+    this.recordReaction(this.state.self.playerId, this.state.self.name, emoji);
+    await this.relay(
+      MessageType.Reaction,
+      { emoji, senderName: this.state.self.name },
       this.state.self.playerId,
       null,
     );
@@ -472,6 +487,18 @@ export class GameHost extends SessionCore implements HostSession {
         );
         void this.relay(MessageType.Chat, message.p, message.from, peerId);
         return;
+      case MessageType.Reaction: {
+        const last = this.lastReactionAt.get(knownPeer.playerId) ?? -Infinity;
+        if (this.now() - last < REACTION_MIN_INTERVAL_MS) return; // too fast: drop quietly
+        this.lastReactionAt.set(knownPeer.playerId, this.now());
+        this.recordReaction(
+          knownPeer.playerId,
+          message.p.senderName,
+          message.p.emoji,
+        );
+        void this.relay(MessageType.Reaction, message.p, message.from, peerId);
+        return;
+      }
       case MessageType.Ping:
         void this.sendTo(peerId, MessageType.Pong, { nonce: message.p.nonce });
         return;

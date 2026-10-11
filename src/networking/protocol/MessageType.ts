@@ -8,6 +8,7 @@ export enum MessageType {
   Rejected = 'REJECTED',
   LobbyState = 'LOBBY_STATE',
   Chat = 'CHAT',
+  Reaction = 'REACTION',
   Ping = 'PING',
   Pong = 'PONG',
   // Game

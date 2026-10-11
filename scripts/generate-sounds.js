@@ -270,6 +270,16 @@ const sounds = {
     return mix(...snaps);
   },
 
+  // An emoji reaction arrives: a soft two-tone boop.
+  reaction: () =>
+    mix(
+      render(0.16, t => env(t, 0.004, 0.16, 5) * 0.8 * sine(660, t)),
+      delay(
+        render(0.2, t => env(t, 0.004, 0.2, 5) * sine(990, t)),
+        0.08,
+      ),
+    ),
+
   // A button tap: a tiny tick.
   tap: () => {
     const noise = makeNoise(7);

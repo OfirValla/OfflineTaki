@@ -5,7 +5,7 @@ import type {
   PlayerView,
 } from '../../game';
 import type { Unsubscribe } from '../../utils/Emitter';
-import type { LobbyPhase, PeerInfo } from '../protocol';
+import type { LobbyPhase, PeerInfo, ReactionEmoji } from '../protocol';
 import type { DiscoveredGame, PeerId } from '../transport/types';
 
 /** State shape shared by the host and client sessions; the UI only ever sees this. */
@@ -34,6 +34,15 @@ export interface ChatEntry {
   fromId: string;
   fromName: string;
   text: string;
+  at: number;
+}
+
+/** An emoji someone sent to the table. */
+export interface Reaction {
+  id: string;
+  playerId: string;
+  name: string;
+  emoji: ReactionEmoji;
   at: number;
 }
 
@@ -66,6 +75,8 @@ export interface SessionState {
   pendingActionId: string | null;
   /** Client: secret that reclaims this seat after a dropped link. */
   reconnectToken: string | null;
+  /** Recent emoji reactions, newest last. */
+  reactions: Reaction[];
 }
 
 /**
@@ -76,7 +87,8 @@ export type SessionEvent =
   | { type: 'game'; event: ClientEvent }
   | { type: 'peerJoined'; name: string }
   | { type: 'gameStarted' }
-  | { type: 'actionRejected'; code: string };
+  | { type: 'actionRejected'; code: string }
+  | { type: 'reaction'; reaction: Reaction };
 
 export interface GameSession {
   readonly role: SessionRole;
@@ -84,6 +96,7 @@ export interface GameSession {
   subscribe(listener: (state: SessionState) => void): Unsubscribe;
   subscribeEvents(listener: (event: SessionEvent) => void): Unsubscribe;
   sendChat(text: string): Promise<void>;
+  sendReaction(emoji: ReactionEmoji): Promise<void>;
   leave(): Promise<void>;
   /** Submits a game action for this player. Outcome arrives through state (`game` / `lastRejection`). */
   act(action: GameAction): Promise<void>;

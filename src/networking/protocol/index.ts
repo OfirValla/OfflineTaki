@@ -17,5 +17,12 @@ export {
   GamePhaseSchema,
   PlayerViewSchema,
 } from './gameSchemas';
+export {
+  REACTION_EMOJIS,
+  REACTION_DISPLAY_MS,
+  REACTION_MIN_INTERVAL_MS,
+  isReactionEmoji,
+} from './reactions';
+export type { ReactionEmoji } from './reactions';
 export { createMessage, decodeMessage, encodeMessage } from './codec';
 export type { DecodeError, MessageContext } from './codec';

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
+  Pressable,
   StyleSheet,
   Text,
   View,
@@ -14,12 +15,15 @@ import { HandFan } from '../../components/cards/HandFan';
 import { ColorPicker } from '../../components/game/ColorPicker';
 import { GameOverPanel } from '../../components/game/GameOverPanel';
 import { PrimaryButton } from '../../components/PrimaryButton';
+import { ReactionBubble } from '../../components/reactions/ReactionBubble';
+import { ReactionTray } from '../../components/reactions/ReactionTray';
 import { CenterPile } from '../../components/table/CenterPile';
 import { MenuButton } from '../../components/table/MenuButton';
 import { OpponentSeats } from '../../components/table/OpponentSeats';
 import { TableBackground } from '../../components/table/TableBackground';
 import { TurnPill, type PillTone } from '../../components/table/TurnPill';
 import { useSessionState } from '../../hooks/useSessionState';
+import { useTick } from '../../hooks/useTick';
 import {
   CardKind,
   chooseColor,
@@ -30,6 +34,11 @@ import {
   type Color,
 } from '../../game';
 import { GameHost } from '../../networking/host/GameHost';
+import {
+  REACTION_DISPLAY_MS,
+  type ReactionEmoji,
+} from '../../networking/protocol';
+import type { Reaction } from '../../networking/session/SessionState';
 
 export function GameScreen({ navigation }: ScreenProps<'Game'>) {
   const { session, leave, settings, setSoundEnabled } = useSessionApi();
@@ -39,8 +48,14 @@ export function GameScreen({ navigation }: ScreenProps<'Game'>) {
   const moves = session && view ? session.legalMoves() : null;
   const [pendingWild, setPendingWild] = useState<Card | null>(null);
   const [busy, setBusy] = useState(false);
+  const [trayOpen, setTrayOpen] = useState(false);
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+
+  // Reaction bubbles expire on a timer; tick only while any could still be visible.
+  const newestReactionAt = state?.reactions.at(-1)?.at ?? 0;
+  const now = useTick(Date.now() - newestReactionAt < REACTION_DISPLAY_MS, 400);
+  const liveReactions = latestLiveReactions(state?.reactions ?? [], now);
 
   useEffect(() => {
     if (!session) navigation.replace('Home');
@@ -70,6 +85,7 @@ export function GameScreen({ navigation }: ScreenProps<'Game'>) {
     !finished;
   const currentName =
     view.players.find(p => p.id === view.currentPlayerId)?.name ?? '…';
+  const myReaction = liveReactions[state.self.playerId];
 
   const pill: { text: string; tone: PillTone } = (() => {
     if (connectionLost)
@@ -114,6 +130,11 @@ export function GameScreen({ navigation }: ScreenProps<'Game'>) {
     } else if (moves.mustChooseColor) {
       act(chooseColor(color));
     }
+  };
+
+  const onReact = (emoji: ReactionEmoji) => {
+    setTrayOpen(false);
+    void session.sendReaction(emoji);
   };
 
   const onNewRound = async () => {
@@ -175,7 +196,18 @@ export function GameScreen({ navigation }: ScreenProps<'Game'>) {
       <View style={[styles.topBar, { marginTop: insets.top + spacing.sm }]}>
         <MenuButton onPress={onMenu} />
         <TurnPill text={pill.text} tone={pill.tone} />
-        <View style={styles.topBarSpacer} />
+        <Pressable
+          onPress={() => setTrayOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Send a reaction"
+          hitSlop={8}
+          style={({ pressed }) => [
+            styles.reactButton,
+            pressed && styles.pressed,
+          ]}
+        >
+          <Text style={styles.reactIcon}>😀</Text>
+        </Pressable>
       </View>
 
       <View style={{ height: seatsHeight }}>
@@ -184,6 +216,7 @@ export function GameScreen({ navigation }: ScreenProps<'Game'>) {
           peers={state.peers}
           width={width}
           height={seatsHeight}
+          reactions={liveReactions}
         />
       </View>
 
@@ -226,6 +259,15 @@ export function GameScreen({ navigation }: ScreenProps<'Game'>) {
       </View>
 
       <View style={[styles.hand, { paddingBottom: insets.bottom }]}>
+        {myReaction ? (
+          <View style={styles.myBubble} pointerEvents="none">
+            <ReactionBubble
+              key={myReaction.id}
+              reaction={myReaction}
+              tail="down"
+            />
+          </View>
+        ) : null}
         <HandFan
           hand={view.you.hand}
           playableIds={moves.playableCardIds}
@@ -233,6 +275,12 @@ export function GameScreen({ navigation }: ScreenProps<'Game'>) {
           onPlay={onPlay}
         />
       </View>
+
+      <ReactionTray
+        visible={trayOpen}
+        onPick={onReact}
+        onClose={() => setTrayOpen(false)}
+      />
 
       <ColorPicker
         visible={pendingWild !== null || (moves.mustChooseColor && interactive)}
@@ -244,6 +292,19 @@ export function GameScreen({ navigation }: ScreenProps<'Game'>) {
   );
 }
 
+/** The newest reaction per player that is still within its display window. */
+function latestLiveReactions(
+  reactions: Reaction[],
+  now: number,
+): Record<string, Reaction> {
+  const live: Record<string, Reaction> = {};
+  for (const reaction of reactions) {
+    if (now - reaction.at < REACTION_DISPLAY_MS)
+      live[reaction.playerId] = reaction;
+  }
+  return live;
+}
+
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   waiting: { color: colors.textMuted, textAlign: 'center' },
@@ -253,10 +314,29 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingHorizontal: spacing.md,
   },
-  topBarSpacer: { width: 56 },
+  reactButton: {
+    width: 56,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reactIcon: { fontSize: 18 },
+  pressed: { opacity: 0.8 },
   center: { flex: 1, justifyContent: 'center', paddingHorizontal: spacing.md },
   actions: { paddingHorizontal: spacing.md, gap: spacing.sm, minHeight: 8 },
   actionButton: { minHeight: 48 },
   rejection: { color: '#FFD3D4', textAlign: 'center', fontWeight: '600' },
   hand: { backgroundColor: 'rgba(0,0,0,0.12)' },
+  myBubble: {
+    position: 'absolute',
+    top: -40,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 10,
+  },
 });

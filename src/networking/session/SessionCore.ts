@@ -2,7 +2,7 @@ import { legalMovesForView, NO_MOVES, type LegalMoves } from '../../game';
 import { Emitter, type Unsubscribe } from '../../utils/Emitter';
 import { uuid } from '../../utils/ids';
 import { createLogger } from '../../utils/logger';
-import { LobbyPhase, PlayerKind } from '../protocol';
+import { LobbyPhase, PlayerKind, type ReactionEmoji } from '../protocol';
 import {
   createMessage,
   decodeMessage,
@@ -18,12 +18,14 @@ import type {
 } from '../transport/types';
 import type {
   ChatEntry,
+  Reaction,
   SessionEvent,
   SessionRole,
   SessionState,
 } from './SessionState';
 
 const log = createLogger('Session');
+const MAX_REACTIONS = 20;
 
 /** Plumbing shared by GameHost and GameClient: state, subscriptions, chat log, message I/O. */
 export abstract class SessionCore {
@@ -134,6 +136,27 @@ export abstract class SessionCore {
       text,
       at: this.now(),
     });
+  }
+
+  /** Records a reaction (ours or a relayed one), adds it to the chat log and notifies listeners. */
+  protected recordReaction(
+    playerId: string,
+    name: string,
+    emoji: ReactionEmoji,
+  ): Reaction {
+    const reaction: Reaction = {
+      id: uuid(),
+      playerId,
+      name,
+      emoji,
+      at: this.now(),
+    };
+    this.update({
+      reactions: [...this.state.reactions, reaction].slice(-MAX_REACTIONS),
+    });
+    this.appendMessage(this.chatEntryFrom(reaction.id, playerId, name, emoji));
+    this.emitEvent({ type: 'reaction', reaction });
+    return reaction;
   }
 
   protected appendMessage(entry: ChatEntry): void {

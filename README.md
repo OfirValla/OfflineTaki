@@ -12,7 +12,8 @@ transport abstraction.
 Playable (Phases 4 and 5). The host phone runs the rules engine, phones send card plays over Nearby
 Connections and receive only what they may see, bots fill empty seats and take their turns, and the
 game screen shows the table, the hand with playable cards highlighted, TAKI mode, colour choice and
-the final ranking, all drawn as a blue-felt table with fanned cards and synthesised sound effects. Dropped phones can reclaim their
+the final ranking, quick emoji reactions, all drawn as a blue-felt table with fanned cards and
+synthesised sound effects. Dropped phones can reclaim their
 seat. Phase 6 hardens reconnect and timeouts.
 
 ## Quick start
