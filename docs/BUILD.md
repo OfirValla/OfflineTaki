@@ -189,6 +189,12 @@ node scripts/generate-icon.js
 pwsh scripts/render-icon-pngs.ps1
 ```
 
+## Screenshots for the README
+
+With one unlocked phone over USB, `pwsh scripts/capture-screenshots.ps1` drives the app through
+home, lobby, a bot game and the reaction tray and saves half-size PNGs into `docs/screenshots`.
+It finds buttons by their on-screen text, so it needs a player name already entered.
+
 ## Developer checks
 
 ```powershell
