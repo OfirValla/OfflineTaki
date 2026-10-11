@@ -1,0 +1,100 @@
+apply plugin: "com.android.application"
+apply plugin: "org.jetbrains.kotlin.android"
+apply plugin: "com.facebook.react"
+
+/**
+ * React Native Gradle plugin configuration.
+ * Release builds bundle the JS and compile it to Hermes bytecode, so the installed APK
+ * never needs Metro or a network connection.
+ */
+react {
+    /* Variants */
+    //   Debug variants load JS from Metro. To make the debug APK standalone as well,
+    //   uncomment the next line (build time goes up, hot reload goes away):
+    // debuggableVariants = []
+
+    /* Autolinking */
+    autolinkLibrariesWithApp()
+}
+
+/**
+ * Set this to true to run R8 on release builds. Kept off for the MVP so that a shrinker
+ * misconfiguration can never be the reason a phone cannot find another phone.
+ */
+def enableProguardInReleaseBuilds = false
+
+/**
+ * The preferred build flavor of JavaScriptCore (unused while Hermes is enabled).
+ */
+def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
+
+/**
+ * Release signing. `android/keystore.properties` is git-ignored; see docs/BUILD.md.
+ * Without it, release falls back to the debug keystore (installable, not store-ready).
+ */
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
+}
+def hasReleaseKeystore = keystorePropertiesFile.exists() && keystoreProperties['storeFile'] != null
+
+android {
+    ndkVersion rootProject.ext.ndkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
+    compileSdk rootProject.ext.compileSdkVersion
+
+    namespace "global.ultra.offlinetaki"
+    defaultConfig {
+        applicationId "global.ultra.offlinetaki"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 4
+        versionName "0.3.1"
+    }
+    signingConfigs {
+        debug {
+            storeFile file('debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+        release {
+            if (hasReleaseKeystore) {
+                storeFile rootProject.file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
+    }
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+        }
+        release {
+            signingConfig hasReleaseKeystore ? signingConfigs.release : signingConfigs.debug
+            minifyEnabled enableProguardInReleaseBuilds
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+        }
+    }
+}
+
+dependencies {
+    // The version of react-native is set by the React Native Gradle Plugin
+    implementation("com.facebook.react:react-android")
+
+    // Offline nearby networking (runs inside Google Play Services; no internet involved).
+    // Pinned to 19.3.0: 19.5.0 ships Kotlin 2.4 metadata, which the Kotlin 2.2 compiler
+    // that React Native 0.87 pins cannot read. Bump together with kotlinVersion.
+    implementation("com.google.android.gms:play-services-nearby:19.3.0")
+
+    // ServiceCompat / NotificationCompat / LocationManagerCompat for the native module
+    implementation("androidx.core:core-ktx:1.17.0")
+
+    if (hermesEnabled.toBoolean()) {
+        implementation("com.facebook.react:hermes-android")
+    } else {
+        implementation jscFlavor
+    }
+}
